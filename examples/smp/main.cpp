@@ -2,7 +2,9 @@
 #include <cstddef>
 #include <type_traits>
 
-#define MP_SIZE 16u
+#define MP_SIZE           16u
+
+#define SOLUTION_SELECTOR 0
 
 enum class id_t : size_t {
 };
@@ -16,7 +18,7 @@ template <class T>
 struct meta_impl {
     using value_type = T;
 
-#if 1
+#if SOLUTION_SELECTOR == 0
     template <size_t n = MP_SIZE - 1u>
     static constexpr auto gen() -> size_t {
         if constexpr (n == 0) {
@@ -25,6 +27,15 @@ struct meta_impl {
             return n + requires { get(info<id_t{n}>{}); };
         } else {
             return gen<n - 1u>();
+        }
+    }
+#elif SOLUTION_SELECTOR == 1
+    template <size_t n = 0u>
+    static constexpr auto gen() -> size_t {
+        if constexpr (n >= MP_SIZE || !requires { get(info<id_t{n}>{}); }) {
+            return n;
+        } else {
+            return gen<n + 1u>();
         }
     }
 #else
@@ -56,20 +67,13 @@ using type_of = typename decltype(get(info<meta>{}))::value_type;
 
 int main(int argc, char *argv[]) {
     static_assert(static_cast<std::size_t>(meta_impl<char>::id) == 0);
-
     static_assert(static_cast<std::size_t>(meta_impl<unsigned char>::id) == 1);
-
     static_assert(static_cast<std::size_t>(meta_impl<short>::id) == 2);
-
     static_assert(static_cast<std::size_t>(meta_impl<unsigned short>::id) == 3);
 
-
     static_assert(std::is_same_v<type_of<static_cast<id_t>(0)>, char>);
-
     static_assert(std::is_same_v<type_of<static_cast<id_t>(1)>, unsigned char>);
-
     static_assert(std::is_same_v<type_of<static_cast<id_t>(2)>, short>);
-
     static_assert(std::is_same_v<type_of<static_cast<id_t>(3)>, unsigned short>);
     return 0;
 }
